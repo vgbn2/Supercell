@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CR Boosting Calculator — Clash Royale Price Estimator</title>
+  <style>
+    :root {
+      --bg-base: #0f141c;
+      --bg-surface: #192231;
+      --bg-card: #202c3f;
+      --border-color: #2e3e56;
+      --text-main: #f0f4f8;
+      --text-muted: #8e9eaf;
+      --primary: #3498db;
+      --primary-hover: #2980b9;
+      --gold: #f39c12;
+      --gold-light: #f1c40f;
+      --danger: #e74c3c;
+      --warning: #e67e22;
+      --success: #2ecc71;
+      --radius: 10px;
+      --transition: all 0.2s ease-in-out;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 1.5rem 1rem;
+    }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      width: 100%;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    header h1 {
+      font-size: 2rem;
+      color: var(--gold-light);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    header p {
+      color: var(--text-muted);
+      margin-top: 0.5rem;
+      font-size: 0.95rem;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 0.6rem;
+      padding: 0.3rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border: 1px solid var(--border-color);
+      background: var(--bg-surface);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .status-pill.live { border-color: var(--success); color: #a9dfbf; }
+    .status-pill.mock { border-color: var(--gold); color: #f9e79f; }
+    .status-pill.offline { border-color: var(--danger); color: #f5b7b1; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
+    }
+
+    @media (min-width: 768px) {
+      .grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    .card {
+      background: var(--bg-surface);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+
+    .card h2 {
+      font-size: 1.2rem;
+      margin-bottom: 1rem;
+      color: var(--gold);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 0.5rem;
+    }
+
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.35rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    input[type="text"], input[type="number"], select {
+      width: 100%;
+      padding: 0.75rem 0.85rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--radius);
+      color: #fff;
+      font-size: 1rem;
+      outline: none;
+      transition: var(--transition);
+    }
+
+    input:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.25);
+    }
+
+    .btn {
+      padding: 0.75rem 1.25rem;
+      border-radius: var(--radius);
+      border: none;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: var(--transition);
+      font-size: 0.95rem;
+    }
+
+    .btn-primary { background: var(--primary); color: #fff; }
+    .btn-primary:hover { background: var(--primary-hover); }
+
+    .btn-secondary {
+      background: var(--bg-card);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+    }
+    .btn-secondary:hover { background: var(--border-color); }
+
+    .btn-gold {
+      background: linear-gradient(135deg, var(--gold), #d35400);
+      color: #fff;
+    }
+    .btn-gold:hover { filter: brightness(1.1); }
+
+    /* Tabs */
+    .tabs {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1rem;
+      overflow-x: auto;
+      padding-bottom: 0.25rem;
+    }
+
+    .tab-btn {
+      padding: 0.5rem 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      color: var(--text-muted);
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 0.85rem;
+      white-space: nowrap;
+      transition: var(--transition);
+      flex: 1;
+      text-align: center;
+    }
+
+    .tab-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    /* Account Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.6rem;
+      margin-bottom: 1rem;
+    }
+    @media (min-width: 500px) {
+      .stats-grid { grid-template-columns: repeat(4, 1fr); }
+    }
+
+    .stat-box {
+      background: var(--bg-card);
+      padding: 0.75rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border-color);
+      text-align: center;
+    }
+
+    .stat-val {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--gold-light);
+    }
+
+    .stat-lbl {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      margin-top: 0.2rem;
+      text-transform: uppercase;
+    }
+
+    /* Card List */
+    .card-list {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding: 0.5rem 0;
+      scrollbar-width: thin;
+    }
+
+    .card-badge {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 0.4rem 0.6rem;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      white-space: nowrap;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.2rem;
+    }
+
+    .card-badge.lvl-15 { border-color: var(--gold); }
+
+    .role-pill {
+      font-size: 0.65rem;
+      padding: 0.15rem 0.35rem;
+      border-radius: 4px;
+      text-transform: uppercase;
+      font-weight: 700;
+      display: inline-block;
+    }
+    .role-tower { background: rgba(230, 126, 34, 0.25); color: #f39c12; border: 1px solid rgba(230, 126, 34, 0.5); }
+    .role-win_condition { background: rgba(231, 76, 60, 0.25); color: #e74c3c; border: 1px solid rgba(231, 76, 60, 0.5); }
+    .role-spell { background: rgba(155, 89, 182, 0.25); color: #bb8fce; border: 1px solid rgba(155, 89, 182, 0.5); }
+    .role-cycle { background: rgba(26, 188, 156, 0.25); color: #1abc9c; border: 1px solid rgba(26, 188, 156, 0.5); }
+    .role-support { background: rgba(52, 152, 219, 0.25); color: #5dade2; border: 1px solid rgba(52, 152, 219, 0.5); }
+
+    /* Quote Box */
+    .quote-box {
+      background: linear-gradient(135deg, rgba(52, 152, 219, 0.1), rgba(241, 196, 15, 0.1));
+      border: 1px solid var(--gold);
+      border-radius: var(--radius);
+      padding: 1.25rem;
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .quote-price {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--gold-light);
+      margin: 0.5rem 0;
+    }
+
+    .quote-nominal {
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.4rem;
+      margin-top: 0.75rem;
+    }
+
+    .chip {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 0.25rem 0.5rem;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      color: var(--text-muted);
+    }
+
+    .chip.highlight { color: var(--gold); border-color: var(--gold); }
+
+    /* Alert Banners */
+    .alert {
+      padding: 0.85rem;
+      border-radius: var(--radius);
+      margin-top: 1rem;
+      font-size: 0.85rem;
+      display: none;
+    }
+
+    .alert.show { display: block; }
+    .alert-danger { background: rgba(231, 76, 60, 0.2); border: 1px solid var(--danger); color: #f5b7b1; }
+    .alert-warning { background: rgba(230, 126, 34, 0.2); border: 1px solid var(--warning); color: #f8c471; }
+    .alert-success { background: rgba(46, 204, 113, 0.2); border: 1px solid var(--success); color: #a9dfbf; }
+
+    /* Radio Group */
+    .radio-group {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0.5rem;
+    }
+
+    .radio-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      padding: 0.6rem 0.4rem;
+      border-radius: var(--radius);
+      cursor: pointer;
+      text-align: center;
+      font-size: 0.8rem;
+      transition: var(--transition);
+    }
+
+    .radio-card.active {
+      border-color: var(--primary);
+      background: rgba(52, 152, 219, 0.2);
+      color: #fff;
+    }
+
+    .action-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-top: 1rem;
+    }
+
+    .action-row .btn { flex: 1; }
+
+    details {
+      margin-top: 1.5rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+
+    details summary { cursor: pointer; padding: 0.25rem 0; }
+
+    footer {
+      text-align: center;
+      margin-top: auto;
+      padding-top: 2rem;
+      font-size: 0.8rem;
+      color: var(--text-muted);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>⚔️ CR Boosting Calculator</h1>
+      <p>Clash Royale Boosting Price Estimation & Account Inspection Engine</p>
+      <div id="statusPill" class="status-pill mock" title="Click to refresh proxy status">
+        <span id="statusIndicator">●</span> <span id="statusText">Checking Backend Proxy...</span>
+      </div>
+    </header>
+
+    <div class="grid">
+      <!-- Left Column: Input & Controls -->
+      <div class="card">
+        <h2>1. Account & Package</h2>
+
+        <!-- Tag Search -->
+        <div class="form-group">
+          <label for="playerTag">Player Tag (e.g. #20U0LQ802Y)</label>
+          <div class="input-row">
+            <input type="text" id="playerTag" placeholder="#UGV0UCVQ" value="#20U0LQ802Y" autocomplete="off" spellcheck="false">
+            <button class="btn btn-primary" id="btnFetch">Fetch</button>
+            <button class="btn btn-secondary" id="btnMock" title="Load offline demo profile">Demo</button>
+          </div>
+          <small id="tagHint" style="color: var(--text-muted); font-size: 0.75rem; margin-top: 0.25rem; display: block;">
+            Charset: [0289CGJLPQRUVY]. Letter 'O' auto-converts to digit '0'.
+          </small>
+        </div>
+
+        <!-- Multi-pack Selector Tabs (PoL & Trophy Road) -->
+        <div class="tabs" id="packTabs">
+          <button class="tab-btn active" data-pack="pol">Path of Legends (PoL)</button>
+          <button class="tab-btn" data-pack="trophy">Trophy Road</button>
+        </div>
+
+        <!-- Pack Form: Path of Legends -->
+        <div id="packFormPoL">
+          <div class="form-group">
+            <label for="startLeague">Current League / Starting Rank</label>
+            <select id="startLeague">
+              <option value="L0">Unranked / Start of Ladder (L0)</option>
+              <option value="L1">Challenger I (L1)</option>
+              <option value="L2">Challenger II (L2)</option>
+              <option value="L3" selected>Challenger III (L3)</option>
+              <option value="L4">Master I (L4)</option>
+              <option value="L5">Master II (L5)</option>
+              <option value="L6">Master III (L6)</option>
+              <option value="L7">Grand Champion (L7)</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="targetLeague">Target League</label>
+            <select id="targetLeague">
+              <option value="L1">Challenger I (L1)</option>
+              <option value="L2">Challenger II (L2)</option>
+              <option value="L3">Challenger III (L3)</option>
+              <option value="L4">Master I (L4)</option>
+              <option value="L5">Master II (L5)</option>
+              <option value="L6">Master III (L6)</option>
+              <option value="L7">Grand Champion (L7)</option>
+              <option value="UC" selected>Ultimate Champion (UC)</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Pack Form: Trophy Road -->
+        <div id="packFormTrophy" style="display: none;">
+          <div class="form-group">
+            <label for="currentCups">Current Trophies</label>
+            <input type="number" id="currentCups" value="6000" min="0" max="9000" step="50">
+          </div>
+          <div class="form-group">
+            <label for="targetCups">Target Trophies</label>
+            <input type="number" id="targetCups" value="8000" min="500" max="9000" step="50">
+          </div>
+        </div>
+
+        <!-- Deadline Selector -->
+        <div class="form-group">
+          <label>Urgency & Deadline</label>
+          <div class="radio-group" id="deadlineGroup" role="radiogroup" aria-label="Urgency & Deadline">
+            <div class="radio-card active" data-deadline="default" role="radio" aria-checked="true" tabindex="0">
+              <strong>Standard</strong>
+              <div>&ge; 3 Days (1.0x)</div>
+            </div>
+            <div class="radio-card" data-deadline="weekend" role="radio" aria-checked="false" tabindex="0">
+              <strong>Weekend</strong>
+              <div>1 Day (2.0x)</div>
+            </div>
+            <div class="radio-card" data-deadline="weekday" role="radio" aria-checked="false" tabindex="0">
+              <strong>Weekday</strong>
+              <div>Rush 1 Day (4.0x)</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-gold" id="btnCalculate" style="width: 100%; margin-top: 0.5rem;">Calculate Price</button>
+
+        <!-- Proxy Config Details -->
+        <details>
+          <summary>⚙️ Proxy Endpoint Settings</summary>
+          <div style="margin-top: 0.5rem;">
+            <label for="workerUrl">Proxy URL (Auto-detected on localhost)</label>
+            <input type="text" id="workerUrl" value="http://localhost:8787" placeholder="https://your-worker.workers.dev">
+          </div>
+        </details>
+      </div>
+
+      <!-- Right Column: Account Insights & Price Output -->
+      <div class="card">
+        <h2>2. Account Inspection & Quote</h2>
+
+        <!-- Account Snapshot -->
+        <div id="accountOverview">
+          <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 0.5rem;">
+            <h3 id="playerName" style="color: #fff; font-size: 1.1rem;">ProRoyaleKing</h3>
+            <span id="playerTagBadge" class="chip highlight">#20U0LQ802Y</span>
+          </div>
+
+          <div class="stats-grid">
+            <div class="stat-box">
+              <div class="stat-val" id="statKingLevel">15</div>
+              <div class="stat-lbl">King Lvl</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-val" id="statTrophies">7,850</div>
+              <div class="stat-lbl">Trophies</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-val" id="statAvgCard">14.2</div>
+              <div class="stat-lbl">Avg Card Lvl</div>
+            </div>
+            <div class="stat-box">
+              <div class="stat-val" id="statWeightedCard">14.3</div>
+              <div class="stat-lbl">Weighted Lvl</div>
+            </div>
+          </div>
+
+          <!-- Card Breakdown Scroll -->
+          <label>Profile Cards Sample</label>
+          <div class="card-list" id="cardListPreview"></div>
+        </div>
+
+        <!-- Refusal Banner -->
+        <div class="alert alert-danger" id="refusalAlert">
+          <strong>⚠️ Account Underleveled</strong>
+          <p id="refusalMessage">Account card level deficit is too high. Boosting to this league requires card level upgrades.</p>
+        </div>
+
+        <!-- Quote Card -->
+        <div class="quote-box" id="quoteResult">
+          <div style="font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">
+            Estimated Price Range
+          </div>
+          <div class="quote-price" id="quoteRange">286.000 ₫ - 414.000 ₫</div>
+          <div class="quote-nominal" id="quoteNominal">Target Base: 318.000 ₫</div>
+
+          <div class="chips" id="quoteChips">
+            <span class="chip" id="chipLeagues">L3 &rarr; UC (5 leagues)</span>
+            <span class="chip" id="chipDiscount">Discount: 10%</span>
+            <span class="chip" id="chipUrgency">Standard SLA</span>
+          </div>
+        </div>
+
+        <!-- Export & Deep-links -->
+        <div class="action-row">
+          <button class="btn btn-secondary" id="btnCopyQuote">📋 Copy Quote</button>
+          <button class="btn btn-primary" id="btnZaloExport">💬 Order via Zalo / Chat</button>
+        </div>
+
+        <div class="alert alert-success" id="toastMessage">Quote copied to clipboard!</div>
+      </div>
+    </div>
+
+    <footer>
+      CR Boosting Calculator &copy; 2026. Game-theory pricing engine backed by Markov random walk ladder drift model.
+    </footer>
+  </div>
+
+  <script>
+    // --- Configuration & Constants ---
+    const BASE_LEAGUE_PRICE = 40000;
+    const VALID_TAG_CHARS = new Set("0289CGJLPQRUVY".split(""));
+
+    const LEAGUE_CONFIG = {
+      L1: { name: "Challenger I", mult: 1.0, expLevel: 13 },
+      L2: { name: "Challenger II", mult: 1.2, expLevel: 14 },
+      L3: { name: "Challenger III", mult: 1.5, expLevel: 14 },
+      L4: { name: "Master I", mult: 1.8, expLevel: 15 },
+      L5: { name: "Master II", mult: 2.2, expLevel: 15 },
+      L6: { name: "Master III", mult: 2.8, expLevel: 15 },
+      L7: { name: "Grand Champion", mult: 3.5, expLevel: 16 },
+      UC: { name: "Ultimate Champion", mult: 4.5, expLevel: 16 }
+    };
+    const LEAGUE_KEYS = ["L1", "L2", "L3", "L4", "L5", "L6", "L7", "UC"];
+
+    const DELTA_TIERS = [
+      { max: 0, mult: 1.0 },
+      { max: 1, mult: 1.3 },
+      { max: 2, mult: 1.7 },
+      { max: 3, mult: 2.2 },
+      { max: 4, mult: 3.0 },
+      { max: Infinity, mult: null }
+    ];
+
+    const DEADLINE_MULT = { default: 1.0, weekend: 2.0, weekday: 4.0 };
+    const PACK_DISCOUNT = { 1: 1.00, 2: 0.95, 3: 0.90, full: 0.85 };
+    const VARIANCE = { floor: 0.9, ceil: 1.3 };
+
+    const ROLE_WEIGHTS = {
+      tower: 1.6,
+      win_condition: 1.5,
+      spell: 1.3,
+      support: 1.0,
+      cycle: 0.7
+    };
+
+    const ROLE_LABELS = {
+      tower: "Tower",
+      win_condition: "WinCon",
+      spell: "Spell",
+      support: "Support",
+      cycle: "Cycle"
+    };
+
+    const ROLE_MAP = {
+      tower: new Set(["Tower Princess", "Cannoneer", "Dagger Duchess", "Baby Goblins", "Tesla", "Cannon", "Inferno Tower", "Bomb Tower", "Tombstone"]),
+      win_condition: new Set(["Hog Rider", "Goblin Barrel", "Golem", "Royal Giant", "Miner", "Lava Hound", "Balloon", "Graveyard", "X-Bow", "Mortar", "Wall Breakers", "Ram Rider", "Battle Ram", "Royal Hogs", "Elixir Golem", "Goblin Giant", "Electro Giant", "Goblin Drill"]),
+      spell: new Set(["The Log", "Zap", "Fireball", "Arrows", "Poison", "Rocket", "Giant Snowball", "Tornado", "Lightning", "Earthquake", "Void", "Freeze", "Barbarian Barrel", "Royal Delivery", "Mirror", "Clone", "Rage"]),
+      cycle: new Set(["Skeletons", "Ice Spirit", "Electro Spirit", "Fire Spirit", "Heal Spirit", "Bats", "Goblins", "Spear Goblins"])
+    };
+
+    function getCardRole(cardName) {
+      if (ROLE_MAP.tower.has(cardName)) return "tower";
+      if (ROLE_MAP.win_condition.has(cardName)) return "win_condition";
+      if (ROLE_MAP.spell.has(cardName)) return "spell";
+      if (ROLE_MAP.cycle.has(cardName)) return "cycle";
+      return "support";
+    }
+
+    let currentAccount = {
+      tag: "#20U0LQ802Y",
+      name: "ProRoyaleKing",
+      expLevel: 15,
+      trophies: 7850,
+      avgCardLevel: 14.2,
+      weightedCardLevel: 14.3,
+      cards: [
+        { name: "Knight", displayLevel: 15, role: "support" },
+        { name: "Archers", displayLevel: 14, role: "support" },
+        { name: "Fireball", displayLevel: 15, role: "spell" },
+        { name: "Hog Rider", displayLevel: 14, role: "win_condition" },
+        { name: "The Log", displayLevel: 14, role: "spell" },
+        { name: "Tesla", displayLevel: 14, role: "tower" }
+      ]
+    };
+
+    let activePack = "pol";
+    let activeDeadline = "default";
+
+    // Auto-detect localhost
+    if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+      document.getElementById("workerUrl").value = window.location.origin;
+    } else {
+      document.getElementById("workerUrl").value = "https://cr-boost-proxy.vgbn.workers.dev";
+    }
+
+    // --- Helpers ---
+    function normalizeTag(raw) {
+      if (!raw || typeof raw !== "string") return null;
+      let tag = raw.trim().toUpperCase().replace(/^#/, "");
+      tag = tag.replace(/O/g, "0").replace(/B/g, "8");
+      if (tag.length < 3 || tag.length > 15) return null;
+      for (const ch of tag) {
+        if (!VALID_TAG_CHARS.has(ch)) return null;
+      }
+      return "#" + tag;
+    }
+
+    function formatVND(val) {
+      return new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(val);
+    }
+
+    function roundThousands(val) {
+      return Math.round(val / 1000) * 1000;
+    }
+
+    function getDeltaMult(delta) {
+      for (const tier of DELTA_TIERS) {
+        if (delta <= tier.max) return tier.mult;
+      }
+      return null;
+    }
+
+    // Check Proxy Health Status
+    async function checkServerHealth() {
+      const pill = document.getElementById("statusPill");
+      const indicator = document.getElementById("statusIndicator");
+      const text = document.getElementById("statusText");
+      const workerBase = document.getElementById("workerUrl").value.trim().replace(/\/$/, "");
+
+      try {
+        const res = await fetch(`${workerBase}/health`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const health = await res.json();
+        pill.className = "status-pill " + (health.mode === "live" ? "live" : "mock");
+        indicator.innerText = "●";
+        text.innerText = health.mode === "live" ? "Live Supercell API" : "Mock Proxy Mode";
+      } catch (e) {
+        pill.className = "status-pill offline";
+        indicator.innerText = "●";
+        text.innerText = "Proxy Offline (Local Fallback)";
+      }
+    }
+
+    // --- Pricing Calculators ---
+    function calcPoL() {
+      const startLeague = document.getElementById("startLeague").value;
+      const targetLeague = document.getElementById("targetLeague").value;
+      const startIdx = startLeague === "L0" ? 0 : LEAGUE_KEYS.indexOf(startLeague) + 1;
+      const targetIdx = LEAGUE_KEYS.indexOf(targetLeague) + 1;
+
+      if (targetIdx <= startIdx) {
+        return { status: "INVALID", message: "Target league must be higher than current league." };
+      }
+
+      const selectedLeagues = LEAGUE_KEYS.slice(startIdx, targetIdx);
+      let rawTotal = 0;
+      const effectiveCardLevel = currentAccount.weightedCardLevel || currentAccount.avgCardLevel;
+
+      for (const lKey of selectedLeagues) {
+        const config = LEAGUE_CONFIG[lKey];
+        const delta = Math.max(0, Math.ceil(config.expLevel - effectiveCardLevel));
+        const deltaMult = getDeltaMult(delta);
+
+        if (deltaMult === null) {
+          return {
+            status: "REFUSED",
+            message: `Account underleveled for ${config.name} (Δ = ${delta} ≥ 5). Requires card upgrades before boosting.`
+          };
+        }
+        rawTotal += BASE_LEAGUE_PRICE * config.mult * deltaMult;
+      }
+
+      const count = selectedLeagues.length;
+      const discount = count >= 8 ? PACK_DISCOUNT.full : (PACK_DISCOUNT[count] || PACK_DISCOUNT[3] || 1.0);
+      const urgency = DEADLINE_MULT[activeDeadline] || 1.0;
+
+      const basePrice = rawTotal * discount * urgency;
+      const nominal = roundThousands(basePrice);
+      const floor = roundThousands(basePrice * VARIANCE.floor);
+      const ceil = roundThousands(basePrice * VARIANCE.ceil);
+
+      return {
+        status: "OK",
+        nominal,
+        floor,
+        ceil,
+        discountPct: Math.round((1 - discount) * 100),
+        urgencyMult: urgency,
+        desc: `${startLeague} → ${targetLeague} (${count} leagues)`
+      };
+    }
+
+    function calcTrophy() {
+      const cur = parseInt(document.getElementById("currentCups").value, 10) || 0;
+      const target = parseInt(document.getElementById("targetCups").value, 10) || 0;
+      if (target <= cur) {
+        return { status: "INVALID", message: "Target trophies must exceed current trophies." };
+      }
+      const diff = target - cur;
+      const base = Math.ceil(diff / 500) * 50000;
+      const urgency = DEADLINE_MULT[activeDeadline] || 1.0;
+      const nominal = roundThousands(base * urgency);
+      return {
+        status: "OK",
+        nominal,
+        floor: roundThousands(nominal * VARIANCE.floor),
+        ceil: roundThousands(nominal * VARIANCE.ceil),
+        desc: `Trophy Road (+${diff.toLocaleString()} Cups)`
+      };
+    }
+
+    function runCalculation() {
+      const refusalAlert = document.getElementById("refusalAlert");
+      const quoteResult = document.getElementById("quoteResult");
+      refusalAlert.classList.remove("show");
+
+      let quote;
+      if (activePack === "pol") quote = calcPoL();
+      else if (activePack === "trophy") quote = calcTrophy();
+
+      if (!quote) return;
+
+      if (quote.status === "REFUSED") {
+        refusalAlert.querySelector("p").innerText = quote.message;
+        refusalAlert.classList.add("show");
+        quoteResult.style.opacity = "0.5";
+        document.getElementById("quoteRange").innerText = "Order Refused";
+        document.getElementById("quoteNominal").innerText = "Card levels too low";
+        return;
+      }
+
+      if (quote.status === "INVALID") {
+        refusalAlert.querySelector("p").innerText = quote.message;
+        refusalAlert.classList.add("show");
+        quoteResult.style.opacity = "0.5";
+        document.getElementById("quoteRange").innerText = "-- ₫";
+        document.getElementById("quoteNominal").innerText = quote.message;
+        return;
+      }
+
+      quoteResult.style.opacity = "1";
+      document.getElementById("quoteRange").innerText = `${formatVND(quote.floor)} - ${formatVND(quote.ceil)}`;
+      document.getElementById("quoteNominal").innerText = `Base Target: ${formatVND(quote.nominal)}`;
+
+      document.getElementById("chipLeagues").innerText = quote.desc;
+      document.getElementById("chipDiscount").innerText = quote.discountPct ? `Discount: -${quote.discountPct}%` : `Standard Rate`;
+      document.getElementById("chipUrgency").innerText = `${activeDeadline.toUpperCase()} (${DEADLINE_MULT[activeDeadline]}x)`;
+    }
+
+    function renderAccount(data) {
+      document.getElementById("playerName").innerText = data.name;
+      document.getElementById("playerTagBadge").innerText = data.tag;
+      document.getElementById("statKingLevel").innerText = data.expLevel;
+      document.getElementById("statTrophies").innerText = data.trophies?.toLocaleString() || "0";
+      document.getElementById("statAvgCard").innerText = Number(data.avgCardLevel || 14).toFixed(1);
+      document.getElementById("statWeightedCard").innerText = Number(data.weightedCardLevel || data.avgCardLevel || 14).toFixed(1);
+
+      if (data.trophies) {
+        document.getElementById("currentCups").value = data.trophies;
+        document.getElementById("targetCups").value = Math.min(9000, data.trophies + 1000);
+      }
+
+      const listEl = document.getElementById("cardListPreview");
+      listEl.innerHTML = "";
+      (data.cards || []).slice(0, 12).forEach(c => {
+        const role = c.role || getCardRole(c.name);
+        const b = document.createElement("div");
+        b.className = "card-badge" + (c.displayLevel >= 15 ? " lvl-15" : "");
+
+        const nameSpan = document.createElement("span");
+        nameSpan.textContent = c.name;
+        const lvlStrong = document.createElement("strong");
+        lvlStrong.textContent = `Lvl ${c.displayLevel}`;
+        const roleSpan = document.createElement("span");
+        roleSpan.className = `role-pill role-${role}`;
+        roleSpan.textContent = ROLE_LABELS[role] || "Support";
+
+        b.append(nameSpan, lvlStrong, roleSpan);
+        listEl.appendChild(b);
+      });
+
+      runCalculation();
+    }
+
+    // --- Event Listeners ---
+    document.getElementById("playerTag").addEventListener("blur", (e) => {
+      const norm = normalizeTag(e.target.value);
+      if (norm) e.target.value = norm;
+    });
+
+    document.getElementById("statusPill").addEventListener("click", checkServerHealth);
+    document.getElementById("workerUrl").addEventListener("change", checkServerHealth);
+
+    document.getElementById("btnMock").addEventListener("click", () => {
+      renderAccount(currentAccount);
+    });
+
+    document.getElementById("btnFetch").addEventListener("click", async () => {
+      const tagInput = document.getElementById("playerTag").value;
+      const clean = normalizeTag(tagInput);
+      if (!clean) {
+        refusalAlert.querySelector("p").innerText = "Invalid player tag character format. Allowed: [0289CGJLPQRUVY].";
+        refusalAlert.classList.add("show");
+        return;
+      }
+      document.getElementById("playerTag").value = clean;
+
+      const workerBase = document.getElementById("workerUrl").value.trim().replace(/\/$/, "");
+      const url = `${workerBase}/player/${encodeURIComponent(clean.replace("#", ""))}`;
+
+      const btn = document.getElementById("btnFetch");
+      btn.disabled = true;
+      btn.innerText = "...";
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || `Error ${res.status}`);
+
+        const cards = data.cards || [];
+        const avg = cards.reduce((s, c) => s + (c.displayLevel || 14), 0) / (cards.length || 1);
+
+        let weightSum = 0;
+        let weightedLevelSum = 0;
+        cards.forEach(c => {
+          const role = c.role || getCardRole(c.name);
+          const w = ROLE_WEIGHTS[role] || 1.0;
+          weightSum += w;
+          weightedLevelSum += (c.displayLevel || 14) * w;
+        });
+        const weightedAvg = weightSum > 0 ? (weightedLevelSum / weightSum) : avg;
+
+        currentAccount = {
+          tag: data.tag || clean,
+          name: data.name,
+          expLevel: data.expLevel,
+          trophies: data.trophies,
+          avgCardLevel: avg,
+          weightedCardLevel: weightedAvg,
+          cards
+        };
+        renderAccount(currentAccount);
+      } catch (err) {
+        refusalAlert.querySelector("p").innerText = `API Fetch Notice: ${err.message} (Tip: click 'Demo' for offline mock data).`;
+        refusalAlert.classList.add("show");
+      } finally {
+        btn.disabled = false;
+        btn.innerText = "Fetch";
+      }
+    });
+
+    // Pack Tabs
+    document.querySelectorAll(".tab-btn").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        activePack = btn.dataset.pack;
+
+        document.getElementById("packFormPoL").style.display = activePack === "pol" ? "block" : "none";
+        document.getElementById("packFormTrophy").style.display = activePack === "trophy" ? "block" : "none";
+        runCalculation();
+      });
+    });
+
+    // Deadline Radio Group
+    function selectDeadline(card) {
+      document.querySelectorAll(".radio-card").forEach(c => {
+        c.classList.remove("active");
+        c.setAttribute("aria-checked", "false");
+      });
+      card.classList.add("active");
+      card.setAttribute("aria-checked", "true");
+      activeDeadline = card.dataset.deadline;
+      runCalculation();
+    }
+
+    document.querySelectorAll(".radio-card").forEach(card => {
+      card.addEventListener("click", () => selectDeadline(card));
+      card.addEventListener("keydown", e => {
+        if (e.key === " " || e.key === "Enter") {
+          e.preventDefault();
+          selectDeadline(card);
+        }
+      });
+    });
+
+    document.getElementById("startLeague").addEventListener("change", runCalculation);
+    document.getElementById("targetLeague").addEventListener("change", runCalculation);
+    document.getElementById("currentCups").addEventListener("input", runCalculation);
+    document.getElementById("targetCups").addEventListener("input", runCalculation);
+    document.getElementById("currentCups").addEventListener("change", runCalculation);
+    document.getElementById("targetCups").addEventListener("change", runCalculation);
+    document.getElementById("btnCalculate").addEventListener("click", runCalculation);
+
+    // Copy Quote
+    document.getElementById("btnCopyQuote").addEventListener("click", () => {
+      const priceText = document.getElementById("quoteRange").innerText;
+      const desc = document.getElementById("chipLeagues").innerText;
+      const text = `⚔️ CR Boosting Quote:\nPlayer: ${currentAccount.name} (${currentAccount.tag})\nPackage: ${desc}\nEstimated Price: ${priceText}\nDeadline: ${activeDeadline.toUpperCase()}`;
+      navigator.clipboard.writeText(text).then(() => {
+        const t = document.getElementById("toastMessage");
+        t.innerText = "Quote copied to clipboard!";
+        t.classList.add("show");
+        setTimeout(() => t.classList.remove("show"), 3000);
+      }).catch(() => {
+        const t = document.getElementById("toastMessage");
+        t.innerText = "Failed to copy quote to clipboard.";
+        t.classList.add("show");
+        setTimeout(() => t.classList.remove("show"), 3000);
+      });
+    });
+
+    document.getElementById("btnZaloExport").addEventListener("click", () => {
+      const priceText = document.getElementById("quoteRange").innerText;
+      const desc = document.getElementById("chipLeagues").innerText;
+      const msg = encodeURIComponent(`Chào shop, mình cần boost CR:\nAcc: ${currentAccount.name} (${currentAccount.tag})\nGói: ${desc}\nBáo giá: ${priceText}`);
+      window.open(`https://zalo.me/?text=${msg}`, "_blank");
+    });
+
+    // Initial run
+    renderAccount(currentAccount);
+    checkServerHealth();
+  </script>
+</body>
+</html>
